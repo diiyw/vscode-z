@@ -1,16 +1,16 @@
 {
-    "name": "tengo",
-    "displayName": "tengo",
-    "description": "Tengo syntax highlighting",
-    "publisher": "graphman",
+    "name": "z",
+    "displayName": "Z language",
+    "description": "Z syntax highlighting",
+    "publisher": "diiyw",
     "repository": {
         "type": "git",
-        "url": "https://github.com/graphman65/vscode-tengo"
+        "url": "https://github.com/diiyw/vscode-z"
     },
     "icon": "logo.png",
-    "version": "0.5.0",
+    "version": "0.1.0",
     "engines": {
-        "vscode": "^1.44.0"
+        "vscode": "^1.100.0"
     },
     "categories": [
         "Programming Languages"
@@ -18,22 +18,22 @@
     "contributes": {
         "languages": [
             {
-                "id": "tengo",
+                "id": "z",
                 "aliases": [
-                    "Tengo",
-                    "tengo"
+                    "Z",
+                    "z"
                 ],
                 "extensions": [
-                    ".tengo"
+                    ".z"
                 ],
                 "configuration": "./language-configuration.json"
             }
         ],
         "grammars": [
             {
-                "language": "tengo",
-                "scopeName": "source.tengo",
-                "path": "./syntaxes/tengo.tmLanguage.json"
+                "language": "z",
+                "scopeName": "source.z",
+                "path": "./syntax/z.tmLanguage.json"
             }
         ]
     },
