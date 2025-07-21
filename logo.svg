@@ -1,0 +1,24 @@
+<svg width="200" height="200" viewBox="0 0 200 200"
+     xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .frame { fill: #4F46E5; }
+      .z-path { fill: #FFFFFF; }
+    </style>
+  </defs>
+
+  <!-- 矩形基底 -->
+  <rect x="10" y="10" width="180" height="180" rx="12" class="frame"/>
+
+  <!-- 优化后的垂直拉伸 Z 路径 -->
+  <path class="z-path"
+        d="M60,70 
+          L140,70 
+          L80,110 
+          L160,110 
+          L145,130 
+          L65,130 
+          L125,90 
+          L40,90 
+          Z"/>
+</svg>
