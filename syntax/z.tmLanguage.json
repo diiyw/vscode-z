@@ -67,6 +67,16 @@
     {
       "comment": "Miscellaneous operator",
       "name": "keyword.operator.misc.z"
+    },
+    {
+      "comment": "Numbers (decimal, hex, binary, octal) with underscore separators support",
+      "name": "constant.numeric.z",
+      "match": "\\b(0x[0-9a-fA-F]+(_[0-9a-fA-F]+)*|0b[01]+(_[01]+)*|0o[0-7]+(_[0-7]+)*|\\d+(_\\d+)*\\.\\d+(_\\d+)*([eE][+-]?\\d+(_\\d+)*)?|\\d+(_\\d+)*[eE][+-]?\\d+(_\\d+)*|\\d+(_\\d+)*)\\b"
+    },
+    {
+      "comment": "Variable identifier",
+      "name": "variable.other.z",
+      "match": "\\b([A-Za-z][A-Za-z0-9_]*|_[A-Za-z0-9_]+)\\b(?!\\s*\\()"
     }
   ],
   "repository": {

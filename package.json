@@ -35,7 +35,19 @@
                 "scopeName": "source.z",
                 "path": "./syntax/z.tmLanguage.json"
             }
-        ]
+        ],
+        "customEditorColors": {
+            "[*]": {
+                "textMateRules": [
+                    {
+                        "scope": "variable.other.z",
+                        "settings": {
+                            "foreground": "#569CD6"
+                        }
+                    }
+                ]
+            }
+        }
     },
     "license": "MIT"
 }
