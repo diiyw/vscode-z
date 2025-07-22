@@ -1,7 +1,7 @@
 {
     "name": "z",
     "displayName": "Z language",
-    "description": "Z syntax highlighting",
+    "description": "Z syntax highlighting and formatting",
     "publisher": "diiyw",
     "repository": {
         "type": "git",
@@ -13,7 +13,8 @@
         "vscode": "^1.100.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Formatters"
     ],
     "contributes": {
         "languages": [
@@ -36,6 +37,12 @@
                 "path": "./syntax/z.tmLanguage.json"
             }
         ],
+        "formatters": [
+            {
+                "language": "z",
+                "extension": ".z"
+            }
+        ],
         "customEditorColors": {
             "[*]": {
                 "textMateRules": [
@@ -49,5 +56,17 @@
             }
         }
     },
-    "license": "MIT"
+    "devDependencies": {
+        "@types/vscode": "^1.100.0",
+        "typescript": "^5.0.0"
+    },
+    "main": "./dist/extension.js",
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "antlr4ts": "0.5.0-alpha.4"
+    }
 }
