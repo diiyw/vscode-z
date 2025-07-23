@@ -16,12 +16,14 @@ statement:
 	| returnStmt
 	| branchStmt
 	| exportStmt
+	| incDecStmt
 	| emptyStmt;
 
 // Assignment Statement: x = y, a += b, etc.
 assignStmt:
 	exprList op = (
 		'='
+		| ':='
 		| '+='
 		| '-='
 		| '*='
@@ -236,6 +238,7 @@ QUO_ASSIGN: '/=';
 REM_ASSIGN: '%=';
 OR_ASSIGN: '||=';
 AND_ASSIGN: '&&=';
+DEFINE: ':=';
 
 // Other tokens
 GT: '>';

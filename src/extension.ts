@@ -46,10 +46,8 @@ export function activate(context: vscode.ExtensionContext) {
                         formatted
                     )];
                 } catch (error) {
-                    // Fallback to original text if parsing fails
-                    console.error('Formatting error:', error);
                     // 显示错误通知给用户
-                    vscode.window.showErrorMessage(`Z格式化错误: ${error instanceof Error ? error.message : String(error)}`);
+                    vscode.window.showErrorMessage(`Z Formatting error: ${error instanceof Error ? error.message : String(error)}`);
                     return [];
                 }
             }
