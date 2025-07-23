@@ -37,18 +37,6 @@
                 "path": "./syntax/z.tmLanguage.json"
             }
         ],
-        "customEditorColors": {
-            "[*]": {
-                "textMateRules": [
-                    {
-                        "scope": "variable.other.z",
-                        "settings": {
-                            "foreground": "#569CD6"
-                        }
-                    }
-                ]
-            }
-        },
         "configuration": {
             "title": "Z Language",
             "properties": {

@@ -77,7 +77,7 @@ export class ZFormatter implements ParseTreeVisitor<string> {
     visitChildren(node: RuleNode): string {
         let result = '';
         for (let i = 0; i < node.childCount; i++) {
-            result += node.getChild(i).accept(this);
+            result += this.visit(node.getChild(i));
         }
         return result;
     }
@@ -99,8 +99,8 @@ export class ZFormatter implements ParseTreeVisitor<string> {
         // Handle all Z language operators
         const operators = [
             '=', ':=', '+', '-', '*', '/', '%', '<', '>', '!', '&', '|',
-            '==', '!=', '<=', '>=', '&&', '||', '++', '--', '...', '+=',
-            '-=', '*=', '/=', '%=', '||=', '&&=', '^', '..', '?', ':'
+            '==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=',
+            '-=', '*=', '/=', '%=', '||=', '^', '?', ':'
         ];
         if (operators.includes(text)) {
             return this.options.spaceAroundOperators ? ` ${text} ` : text;
@@ -116,9 +116,8 @@ export class ZFormatter implements ParseTreeVisitor<string> {
 
         // Handle all Z language keywords
         const keywords = [
-            'if', 'else', 'for', 'in', 'return', 'break', 'continue',
-            'export', 'func', 'import', 'error', 'immutable', 'true',
-            'false', 'undefined'
+            'if', 'else', 'for', 'in', 'return',
+            'export', 'func', 'error', 'immutable'
         ];
         if (keywords.includes(text)) {
             // Add space after keywords
