@@ -58,7 +58,7 @@ returnStmt: 'return' expression? ';'?;
 branchStmt: ('break' | 'continue') identifier? ';'?;
 
 // Export Statement: export expr
-exportStmt: 'export' expression ';'?;
+exportStmt: 'export' blockStmt ';'?;
 
 // Empty Statement: just semicolon or implicit
 emptyStmt: ';';

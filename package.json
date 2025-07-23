@@ -37,12 +37,6 @@
                 "path": "./syntax/z.tmLanguage.json"
             }
         ],
-        "formatters": [
-            {
-                "language": "z",
-                "extension": ".z"
-            }
-        ],
         "customEditorColors": {
             "[*]": {
                 "textMateRules": [
@@ -53,6 +47,36 @@
                         }
                     }
                 ]
+            }
+        },
+        "configuration": {
+            "title": "Z Language",
+            "properties": {
+                "z.format.indentSize": {
+                    "type": "number",
+                    "default": 4,
+                    "description": "Number of spaces used for indentation"
+                },
+                "z.format.useTabs": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use tabs instead of spaces for indentation"
+                },
+                "z.format.bracesOnSameLine": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Place opening braces on the same line as the declaration"
+                },
+                "z.format.spaceAroundOperators": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Add spaces around operators"
+                },
+                "z.format.spaceAfterComma": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Add space after commas"
+                }
             }
         }
     },

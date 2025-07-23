@@ -754,7 +754,7 @@ export class zParser extends Parser {
 			this.state = 183;
 			this.match(zParser.EXPORT);
 			this.state = 184;
-			this.expression();
+			this.blockStmt();
 			this.state = 186;
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input, 14, this._ctx) ) {
@@ -2530,7 +2530,7 @@ export class zParser extends Parser {
 		"\t\x03\x02\x02\xB3\xB5\x05`1\x02\xB4\xB3\x03\x02\x02\x02\xB4\xB5\x03\x02" +
 		"\x02\x02\xB5\xB7\x03\x02\x02\x02\xB6\xB8\x07,\x02\x02\xB7\xB6\x03\x02" +
 		"\x02\x02\xB7\xB8\x03\x02\x02\x02\xB8\x17\x03\x02\x02\x02\xB9\xBA\x07\x17" +
-		"\x02\x02\xBA\xBC\x05 \x11\x02\xBB\xBD\x07,\x02\x02\xBC\xBB\x03\x02\x02" +
+		"\x02\x02\xBA\xBC\x05\f\x07\x02\xBB\xBD\x07,\x02\x02\xBC\xBB\x03\x02\x02" +
 		"\x02\xBC\xBD\x03\x02\x02\x02\xBD\x19\x03\x02\x02\x02\xBE\xBF\x07,\x02" +
 		"\x02\xBF\x1B\x03\x02\x02\x02\xC0\xC4\x05\b\x05\x02\xC1\xC4\x05\x1E\x10" +
 		"\x02\xC2\xC4\x05\n\x06\x02\xC3\xC0\x03\x02\x02\x02\xC3\xC1\x03\x02\x02" +
@@ -3024,8 +3024,8 @@ export class BranchStmtContext extends ParserRuleContext {
 
 export class ExportStmtContext extends ParserRuleContext {
 	public EXPORT(): TerminalNode { return this.getToken(zParser.EXPORT, 0); }
-	public expression(): ExpressionContext {
-		return this.getRuleContext(0, ExpressionContext);
+	public blockStmt(): BlockStmtContext {
+		return this.getRuleContext(0, BlockStmtContext);
 	}
 	public SEMI(): TerminalNode | undefined { return this.tryGetToken(zParser.SEMI, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {

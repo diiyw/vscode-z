@@ -836,8 +836,8 @@ public class zParser extends Parser {
 	@SuppressWarnings("CheckReturnValue")
 	public static class ExportStmtContext extends ParserRuleContext {
 		public TerminalNode EXPORT() { return getToken(zParser.EXPORT, 0); }
-		public ExpressionContext expression() {
-			return getRuleContext(ExpressionContext.class,0);
+		public BlockStmtContext blockStmt() {
+			return getRuleContext(BlockStmtContext.class,0);
 		}
 		public TerminalNode SEMI() { return getToken(zParser.SEMI, 0); }
 		public ExportStmtContext(ParserRuleContext parent, int invokingState) {
@@ -855,7 +855,7 @@ public class zParser extends Parser {
 			setState(183);
 			match(EXPORT);
 			setState(184);
-			expression();
+			blockStmt();
 			setState(186);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,14,_ctx) ) {
@@ -3124,7 +3124,7 @@ public class zParser extends Parser {
 		"\u0000\u0000\u00b3\u00b5\u0001\u0000\u0000\u0000\u00b4\u00b6\u0005*\u0000"+
 		"\u0000\u00b5\u00b4\u0001\u0000\u0000\u0000\u00b5\u00b6\u0001\u0000\u0000"+
 		"\u0000\u00b6\u0015\u0001\u0000\u0000\u0000\u00b7\u00b8\u0005\u0015\u0000"+
-		"\u0000\u00b8\u00ba\u0003\u001e\u000f\u0000\u00b9\u00bb\u0005*\u0000\u0000"+
+		"\u0000\u00b8\u00ba\u0003\n\u0005\u0000\u00b9\u00bb\u0005*\u0000\u0000"+
 		"\u00ba\u00b9\u0001\u0000\u0000\u0000\u00ba\u00bb\u0001\u0000\u0000\u0000"+
 		"\u00bb\u0017\u0001\u0000\u0000\u0000\u00bc\u00bd\u0005*\u0000\u0000\u00bd"+
 		"\u0019\u0001\u0000\u0000\u0000\u00be\u00c2\u0003\u0006\u0003\u0000\u00bf"+
