@@ -1,56 +1,68 @@
 import * as vscode from 'vscode';
-import { FormattingOptions, TextDocument, TextEdit } from 'vscode';
-import { ZFormatter } from './formatter';
-import { CharStreams, CommonTokenStream } from 'antlr4ts';
-import { zLexer } from './generated/syntax/zLexer';
-import { zParser } from './generated/syntax/zParser';
+import { TextDocument, TextEdit} from 'vscode';
+import * as path from 'path';
+import { spawnSync } from 'child_process';
+
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.languages.registerDocumentFormattingEditProvider('z', {
-            provideDocumentFormattingEdits(
+            async provideDocumentFormattingEdits(
                 document: TextDocument,
-                options: FormattingOptions
-            ): TextEdit[] {
-                const text = document.getText();
+            ): Promise<TextEdit[]> {
+                const filePath = document.fileName;
+                const fileDir = path.dirname(filePath);
 
                 try {
-                    // Create lexer and parser
-                    const inputStream = CharStreams.fromString(text);
-                    const lexer = new zLexer(inputStream);
-                    const tokenStream = new CommonTokenStream(lexer);
-                    const parser = new zParser(tokenStream);
+                    // 调用外部命令 `z fmt`
+                    const result = spawnSync('z', ['fmt', path.basename(filePath)], {
+                        input: filePath,
+                        cwd: fileDir, // 设置工作目录为文件所在目录
+                        encoding: 'utf8',
+                        timeout: 5000, // 防止挂起
+                    });
 
-                    // Parse the program
-                    const tree = parser.program();
+                    if (result.error) {
+                        const action = await vscode.window.showErrorMessage(
+                            `Z command not found. Please ensure 'z' is installed and available in your PATH.`,
+                            'Install Z',
+                            'Cancel'
+                        );
+                        if (action === 'Install Z') {
+                            // 打开 Z 的安装页面或文档
+                            vscode.env.openExternal(vscode.Uri.parse('https://github.com/diiyw/z/releases'));
+                        }
+                        return [];
+                    }
 
-                    // Get formatting options from VS Code configuration
-                    const config = vscode.workspace.getConfiguration('z.format');
-                    const formatterOptions = {
-                        indentSize: config.get<number>('indentSize', 4),
-                        useTabs: config.get<boolean>('useTabs', false),
-                        bracesOnSameLine: config.get<boolean>('bracesOnSameLine', true),
-                        spaceAroundOperators: config.get<boolean>('spaceAroundOperators', true),
-                        spaceAfterComma: config.get<boolean>('spaceAfterComma', true)
-                    };
+                    if (result.status !== 0) {
+                        // 命令执行失败
+                        const errorMsg = result.stderr || 'Unknown error';
+                        vscode.window.showErrorMessage(`'z fmt' failed with exit code ${result.status}: ${errorMsg}`);
+                        return [];
+                    }
 
-                    // Format using visitor with configuration options
-                    const formatter = new ZFormatter(formatterOptions);
-                    const formatted = tree.accept(formatter);
+                    const formatted = result.stdout;
 
-                    return [TextEdit.replace(
-                        new vscode.Range(
-                            document.positionAt(0),
-                            document.positionAt(text.length)
-                        ),
-                        formatted
-                    )];
+                    // 替换整个文档内容
+                    const fullRange = new vscode.Range(
+                        new vscode.Position(0, 0),
+                        document.lineAt(document.lineCount - 1).range.end
+                    );
+
+                    return [
+                        TextEdit.replace(fullRange, formatted)
+                    ];
                 } catch (error) {
-                    // 显示错误通知给用户
-                    vscode.window.showErrorMessage(`Z Formatting error: ${error instanceof Error ? error.message : String(error)}`);
+                    // 捕获异常并提示用户
+                    vscode.window.showErrorMessage(
+                        `Z Formatting error: ${error instanceof Error ? error.message : String(error)}`
+                    );
                     return [];
                 }
             }
         })
     );
 }
+
+export function deactivate() {}
