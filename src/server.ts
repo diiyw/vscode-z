@@ -12,15 +12,20 @@ import {
     TextDocumentSyncKind,
     InitializeResult,
     WorkspaceFolder,
-    InsertTextFormat
+    InsertTextFormat,
+    Definition,
+    Location,
+    Range
 } from 'vscode-languageserver/node';
 
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 
-// 添加child_process模块用于执行外部命令
+// 添加child_process和path模块用于执行外部命令和路径处理
 import { spawn } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // 创建连接并监听进程输入输出
 const connection = createConnection(ProposedFeatures.all);
@@ -54,7 +59,8 @@ connection.onInitialize((params: InitializeParams) => {
             // 告诉客户端服务器支持代码补全
             completionProvider: {
                 resolveProvider: true
-            }
+            },
+            definitionProvider: true
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -324,6 +330,121 @@ connection.onCompletionResolve(
         return item;
     }
 );
+
+// 处理定义跳转请求
+connection.onDefinition(async (params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+        return null;
+    }
+
+    const text = document.getText();
+    const offset = document.offsetAt(params.position);
+
+    // 查找import语句
+    const importDefinition = await findImportDefinition(document, params.position);
+    if (importDefinition) {
+        return importDefinition;
+    }
+
+    // 查找变量和函数定义
+    return findSymbolDefinition(document, params.position);
+});
+
+// 查找import语句的定义
+async function findImportDefinition(document: TextDocument, position: any): Promise<Definition | null> {
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+
+    // 匹配import语句，如 import("fmt") 或 import("m/fmt")
+    const importRegex = /import\s*\(\s*["']([^"']+)["']\s*\)/g;
+    let match;
+
+    while ((match = importRegex.exec(text)) !== null) {
+        const start = match.index;
+        const end = start + match[0].length;
+
+        // 检查光标是否在import语句范围内
+        if (offset >= start && offset <= end) {
+            const importPath = match[1]; // 获取import的路径
+            const documentPath = path.parse(document.uri.replace('file://', ''));
+            const targetPath = path.resolve(documentPath.dir, importPath + '.z');
+
+            // 检查文件是否存在
+            if (fs.existsSync(targetPath)) {
+                const targetUri = `file://${targetPath}`;
+                return Location.create(targetUri, Range.create(0, 0, 0, 0));
+            }
+            break;
+        }
+    }
+
+    return null;
+}
+
+// 查找变量和函数定义
+function findSymbolDefinition(document: TextDocument, position: any): Definition | null {
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+    const lines = text.split('\n');
+
+    // 获取光标所在行
+    const line = lines[position.line];
+    if (!line) {
+        return null;
+    }
+
+    // 简单提取光标处的单词
+    const wordRange = getWordRangeAtPosition(line, position.character);
+    if (!wordRange) {
+        return null;
+    }
+
+    const word = line.substring(wordRange.start, wordRange.end);
+    if (!word) {
+        return null;
+    }
+
+    // 在整个文档中查找变量或函数定义
+    for (let i = 0; i < lines.length; i++) {
+        const currentLine = lines[i];
+
+        // 匹配变量定义 var name = ...
+        const varMatch = currentLine.match(new RegExp(`var\\s+${word}\\s*=`));
+        if (varMatch) {
+            const startPos = { line: i, character: varMatch.index! };
+            const endPos = { line: i, character: varMatch.index! + varMatch[0].length };
+            return Location.create(document.uri, Range.create(startPos, endPos));
+        }
+
+        // 匹配函数定义 func name(...) 或 export func name(...)
+        const funcMatch = currentLine.match(new RegExp(`(export\\s+)?func\\s+${word}\\s*\\(`));
+        if (funcMatch) {
+            const startPos = { line: i, character: funcMatch.index! };
+            const endPos = { line: i, character: funcMatch.index! + funcMatch[0].length };
+            return Location.create(document.uri, Range.create(startPos, endPos));
+        }
+    }
+
+    return null;
+}
+
+// 获取光标处单词的范围
+function getWordRangeAtPosition(line: string, character: number): { start: number; end: number } | null {
+    const wordRegex = /[a-zA-Z_][a-zA-Z0-9_]*/g;
+    let match;
+
+    while ((match = wordRegex.exec(line)) !== null) {
+        const start = match.index;
+        const end = start + match[0].length;
+
+        if (character >= start && character <= end) {
+            return { start, end };
+        }
+    }
+
+    return null;
+}
 
 // 监听文档变化
 documents.listen(connection);
