@@ -19,6 +19,9 @@ import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 
+// 添加child_process模块用于执行外部命令
+import { spawn } from 'child_process';
+
 // 创建连接并监听进程输入输出
 const connection = createConnection(ProposedFeatures.all);
 
@@ -74,6 +77,162 @@ connection.onInitialized(() => {
             connection.console.log('Workspace folder change event received.');
         });
     }
+});
+
+// 验证文档的函数
+async function validateTextDocument(textDocument: TextDocument): Promise<void> {
+    const text = textDocument.getText();
+    const diagnostics: Diagnostic[] = [];
+
+    try {
+        // 调用外部命令 'z check' 进行语法检查
+        const checkResult = await runZCheck(text);
+
+        // 解析检查结果
+        if (checkResult) {
+            try {
+                const errors = JSON.parse(checkResult);
+                for (const error of errors) {
+                    if (error.Pos && error.Msg) {
+                        const diagnostic: Diagnostic = {
+                            severity: DiagnosticSeverity.Error,
+                            range: {
+                                start: { line: error.Pos.Line - 1, character: error.Pos.Column - 1 },
+                                end: { line: error.Pos.Line - 1, character: error.Pos.Column }
+                            },
+                            message: error.Msg,
+                            source: 'z'
+                        };
+                        diagnostics.push(diagnostic);
+                    }
+                }
+            } catch (parseError) {
+                connection.console.error(`Failed to parse 'z check' output: ${parseError}`);
+            }
+        }
+    } catch (error) {
+        // 如果外部命令执行失败，回退到原来的简单括号检查
+        connection.console.log(`Failed to run 'z check': ${error}`);
+        fallbackValidation(textDocument, diagnostics);
+    }
+
+    // 发布诊断信息
+    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+}
+
+// 运行 z check 命令
+function runZCheck(content: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const child = spawn('z', ['check']);
+
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        child.on('close', (code) => {
+            if (code === 0) {
+                resolve(stdout);
+            } else {
+                reject(new Error(`'z check' exited with code ${code}: ${stderr}`));
+            }
+        });
+
+        child.on('error', (error) => {
+            reject(error);
+        });
+
+        // 通过 stdin 传递文件内容
+        child.stdin.write(content);
+        child.stdin.end();
+    });
+}
+
+// 回退验证方法（原来的简单括号检查）
+function fallbackValidation(textDocument: TextDocument, diagnostics: Diagnostic[]): void {
+    const text = textDocument.getText();
+
+    // 检查语法错误的简单实现
+    // 这里使用一个简单的启发式方法来检测潜在的错误
+
+    // 检查括号匹配
+    const bracketStack: { char: string, position: number }[] = [];
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '(' || char === '[' || char === '{') {
+            bracketStack.push({ char, position: i });
+        } else if (char === ')' || char === ']' || char === '}') {
+            if (bracketStack.length === 0) {
+                // 发现不匹配的右括号
+                const diagnostic: Diagnostic = {
+                    severity: DiagnosticSeverity.Error,
+                    range: {
+                        start: textDocument.positionAt(i),
+                        end: textDocument.positionAt(i + 1)
+                    },
+                    message: `不匹配的括号 '${char}'`,
+                    source: 'z'
+                };
+                diagnostics.push(diagnostic);
+            } else {
+                const lastBracket = bracketStack.pop()!;
+                if ((char === ')' && lastBracket.char !== '(') ||
+                    (char === ']' && lastBracket.char !== '[') ||
+                    (char === '}' && lastBracket.char !== '{')) {
+                    // 括号类型不匹配
+                    const diagnostic: Diagnostic = {
+                        severity: DiagnosticSeverity.Error,
+                        range: {
+                            start: textDocument.positionAt(i),
+                            end: textDocument.positionAt(i + 1)
+                        },
+                        message: `括号类型不匹配，期望 '${getMatchingBracket(lastBracket.char)}' 但找到 '${char}'`,
+                        source: 'z'
+                    };
+                    diagnostics.push(diagnostic);
+                }
+            }
+        }
+    }
+
+    // 检查未闭合的左括号
+    while (bracketStack.length > 0) {
+        const unclosedBracket = bracketStack.pop()!;
+        const diagnostic: Diagnostic = {
+            severity: DiagnosticSeverity.Error,
+            range: {
+                start: textDocument.positionAt(unclosedBracket.position),
+                end: textDocument.positionAt(unclosedBracket.position + 1)
+            },
+            message: `未闭合的括号 '${unclosedBracket.char}'`,
+            source: 'z'
+        };
+        diagnostics.push(diagnostic);
+    }
+}
+
+// 获取匹配的括号
+function getMatchingBracket(bracket: string): string {
+    switch (bracket) {
+        case '(': return ')';
+        case '[': return ']';
+        case '{': return '}';
+        case ')': return '(';
+        case ']': return '[';
+        case '}': return '{';
+        default: return '';
+    }
+}
+
+// 监听文档打开和变更事件
+documents.onDidChangeContent(async (change) => {
+    await validateTextDocument(change.document);
 });
 
 // Z语言关键字
