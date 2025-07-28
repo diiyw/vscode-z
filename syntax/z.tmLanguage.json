@@ -84,7 +84,7 @@
       "patterns": [
         {
           "name": "keyword.control.z",
-          "match": "\\b(if|else|for|return|import|func|export|in|var)\\b"
+          "match": "\\b(if|else|for|return|immutable|import|func|export|in|var)\\b"
         }
       ]
     },

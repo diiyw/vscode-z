@@ -36,15 +36,25 @@
                 "scopeName": "source.z",
                 "path": "./syntax/z.tmLanguage.json"
             }
+        ],
+        "snippets": [
+            {
+                "language": "z",
+                "path": "./snippets/z.code-snippets"
+            }
         ]
     },
     "devDependencies": {
         "@types/node": "^24.1.0",
         "@types/vscode": "^1.100.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.0.0",
+        "vscode-languageclient": "^9.0.1",
+        "vscode-languageserver": "^9.0.1",
+        "vscode-languageserver-textdocument": "^1.0.12"
     },
     "main": "./dist/extension.js",
     "scripts": {
+        "build": "tsc",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./"
     },

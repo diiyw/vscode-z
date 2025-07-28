@@ -1,0 +1,61 @@
+{
+	"Function": {
+		"prefix": "func",
+		"body": [
+			"func ${1:name}(${2:params}) {",
+			"\t$0",
+			"}"
+		],
+		"description": "Function declaration"
+	},
+	"If Statement": {
+		"prefix": "if",
+		"body": [
+			"if ${1:condition} {",
+			"\t$0",
+			"}"
+		],
+		"description": "If statement"
+	},
+	"For Loop": {
+		"prefix": "for",
+		"body": [
+			"for ${1:condition} {",
+			"\t$0",
+			"}"
+		],
+		"description": "For loop"
+	},
+	"For i Loop": {
+		"prefix": "fori",
+		"body": [
+			"for ${1:i} := 0; ${1:i} < ${2:length}; ${1:i}++ {",
+			"\t$0",
+			"}"
+		],
+		"description": "For loop with iterator"
+	},
+	"For-in Loop": {
+		"prefix": "forin",
+		"body": [
+			"for ${1:k}, ${2:v} in ${3:items} {",
+			"\t$0",
+			"}"
+		],
+		"description": "For-in loop"
+	},
+	"Import module": {
+		"prefix": "import",
+		"body": [
+			"import(\"${1:module}\")"
+		],
+		"description": "Import module"
+	},
+	"Immutable value": {
+		"prefix": "immutable",
+		"body": [
+			"immutable(\"${1:value}\")"
+		],
+		"description": "Immutable value"
+	}
+}
