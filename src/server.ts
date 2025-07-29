@@ -15,7 +15,10 @@ import {
     InsertTextFormat,
     Definition,
     Location,
-    Range
+    Range,
+    DocumentFormattingParams,
+    TextEdit,
+    Position
 } from 'vscode-languageserver/node';
 
 import {
@@ -23,9 +26,10 @@ import {
 } from 'vscode-languageserver-textdocument';
 
 // 添加child_process和path模块用于执行外部命令和路径处理
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import { json } from 'stream/consumers';
 
 // 创建连接并监听进程输入输出
 const connection = createConnection(ProposedFeatures.all);
@@ -36,6 +40,7 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
+let hasFormattingCapability: boolean = false;
 
 connection.onInitialize((params: InitializeParams) => {
     const capabilities = params.capabilities;
@@ -52,6 +57,10 @@ connection.onInitialize((params: InitializeParams) => {
         capabilities.textDocument.publishDiagnostics &&
         capabilities.textDocument.publishDiagnostics.relatedInformation
     );
+    hasFormattingCapability = !!(
+        capabilities.textDocument &&
+        capabilities.textDocument.formatting
+    );
 
     const result: InitializeResult = {
         capabilities: {
@@ -60,7 +69,8 @@ connection.onInitialize((params: InitializeParams) => {
             completionProvider: {
                 resolveProvider: true
             },
-            definitionProvider: true
+            definitionProvider: true,
+            documentFormattingProvider: true
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -113,23 +123,22 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
                     }
                 }
             } catch (parseError) {
-                connection.console.error(`Failed to parse 'z check' output: ${parseError}`);
+                connection.console.error(`Failed to parse 'z diagnostic' output: ${parseError}`);
             }
         }
     } catch (error) {
         // 如果外部命令执行失败，回退到原来的简单括号检查
-        connection.console.log(`Failed to run 'z check': ${error}`);
-        fallbackValidation(textDocument, diagnostics);
+        connection.console.log(`Failed to run 'z diagnostic': ${error}`);
     }
 
     // 发布诊断信息
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
-// 运行 z check 命令
+// 运行 z diagnostics 命令
 function runZCheck(content: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        const child = spawn('z', ['check']);
+        const child = spawn('z', ['diagnostic']);
 
         let stdout = '';
         let stderr = '';
@@ -160,82 +169,6 @@ function runZCheck(content: string): Promise<string> {
     });
 }
 
-// 回退验证方法（原来的简单括号检查）
-function fallbackValidation(textDocument: TextDocument, diagnostics: Diagnostic[]): void {
-    const text = textDocument.getText();
-
-    // 检查语法错误的简单实现
-    // 这里使用一个简单的启发式方法来检测潜在的错误
-
-    // 检查括号匹配
-    const bracketStack: { char: string, position: number }[] = [];
-    for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        if (char === '(' || char === '[' || char === '{') {
-            bracketStack.push({ char, position: i });
-        } else if (char === ')' || char === ']' || char === '}') {
-            if (bracketStack.length === 0) {
-                // 发现不匹配的右括号
-                const diagnostic: Diagnostic = {
-                    severity: DiagnosticSeverity.Error,
-                    range: {
-                        start: textDocument.positionAt(i),
-                        end: textDocument.positionAt(i + 1)
-                    },
-                    message: `不匹配的括号 '${char}'`,
-                    source: 'z'
-                };
-                diagnostics.push(diagnostic);
-            } else {
-                const lastBracket = bracketStack.pop()!;
-                if ((char === ')' && lastBracket.char !== '(') ||
-                    (char === ']' && lastBracket.char !== '[') ||
-                    (char === '}' && lastBracket.char !== '{')) {
-                    // 括号类型不匹配
-                    const diagnostic: Diagnostic = {
-                        severity: DiagnosticSeverity.Error,
-                        range: {
-                            start: textDocument.positionAt(i),
-                            end: textDocument.positionAt(i + 1)
-                        },
-                        message: `括号类型不匹配，期望 '${getMatchingBracket(lastBracket.char)}' 但找到 '${char}'`,
-                        source: 'z'
-                    };
-                    diagnostics.push(diagnostic);
-                }
-            }
-        }
-    }
-
-    // 检查未闭合的左括号
-    while (bracketStack.length > 0) {
-        const unclosedBracket = bracketStack.pop()!;
-        const diagnostic: Diagnostic = {
-            severity: DiagnosticSeverity.Error,
-            range: {
-                start: textDocument.positionAt(unclosedBracket.position),
-                end: textDocument.positionAt(unclosedBracket.position + 1)
-            },
-            message: `未闭合的括号 '${unclosedBracket.char}'`,
-            source: 'z'
-        };
-        diagnostics.push(diagnostic);
-    }
-}
-
-// 获取匹配的括号
-function getMatchingBracket(bracket: string): string {
-    switch (bracket) {
-        case '(': return ')';
-        case '[': return ']';
-        case '{': return '}';
-        case ')': return '(';
-        case ']': return '[';
-        case '}': return '{';
-        default: return '';
-    }
-}
-
 // 监听文档打开和变更事件
 documents.onDidChangeContent(async (change) => {
     await validateTextDocument(change.document);
@@ -243,7 +176,7 @@ documents.onDidChangeContent(async (change) => {
 
 // Z语言关键字
 const keywords: string[] = [
-    'if', 'else', 'for', 'return', 'func', 'export', 'in', 'var'
+    'if', 'else', 'for', 'return', 'func', 'export', 'in'
 ];
 
 // Z语言内置函数
@@ -291,6 +224,8 @@ connection.onCompletion(
             items.push({
                 label: func,
                 kind: CompletionItemKind.Function,
+                insertText: `${func}($1)`,
+                insertTextFormat: InsertTextFormat.Snippet,
                 data: `function-${func}`
             });
         });
@@ -337,114 +272,130 @@ connection.onDefinition(async (params) => {
     if (!document) {
         return null;
     }
-
-    const text = document.getText();
     const offset = document.offsetAt(params.position);
+    const code = document.getText();
+    const body = JSON.stringify({
+        code,
+        offset: offset,
+    });
 
-    // 查找import语句
-    const importDefinition = await findImportDefinition(document, params.position);
-    if (importDefinition) {
-        return importDefinition;
+    try {
+        // 调用外部命令 'z definition'
+        const definitionResult = await runZDefinition(body);
+        
+        // 解析结果
+        if (definitionResult) {
+            const result = JSON.parse(definitionResult);
+            
+            // 如果存在 import 字段，表示需要跳转到导入的模块
+            if (result.import) {
+                // 获取当前工作目录
+                const currentDir = path.dirname(document.uri.replace('file://', ''));
+                
+                // 构建目标文件路径
+                const targetFilePath = path.join(currentDir, `${result.import}.z`);
+                
+                // 检查文件是否存在
+                if (fs.existsSync(targetFilePath)) {
+                    // 创建跳转位置
+                    const location: Location = {
+                        uri: `file://${targetFilePath}`,
+                        range: Range.create(Position.create(0, 0), Position.create(0, 0))
+                    };
+                    return location;
+                }
+            }
+            
+            // 如果存在 globals 字段且不为空，可以处理全局变量跳转
+            // 此处可根据需要扩展
+        }
+    } catch (error) {
+        connection.console.error(`Failed to run 'z definition': ${error}`);
     }
-
-    // 查找变量和函数定义
-    return findSymbolDefinition(document, params.position);
+    
+    return null;
 });
 
-// 查找import语句的定义
-async function findImportDefinition(document: TextDocument, position: any): Promise<Definition | null> {
-    const text = document.getText();
-    const offset = document.offsetAt(position);
+// 运行 z definition 命令
+function runZDefinition(body: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const child = spawn('z', ['definition']);
 
-    // 匹配import语句，如 import("fmt") 或 import("m/fmt")
-    const importRegex = /import\s*\(\s*["']([^"']+)["']\s*\)/g;
-    let match;
+        let stdout = '';
+        let stderr = '';
 
-    while ((match = importRegex.exec(text)) !== null) {
-        const start = match.index;
-        const end = start + match[0].length;
+        child.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
 
-        // 检查光标是否在import语句范围内
-        if (offset >= start && offset <= end) {
-            const importPath = match[1]; // 获取import的路径
-            const documentPath = path.parse(document.uri.replace('file://', ''));
-            const targetPath = path.resolve(documentPath.dir, importPath + '.z');
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
 
-            // 检查文件是否存在
-            if (fs.existsSync(targetPath)) {
-                const targetUri = `file://${targetPath}`;
-                return Location.create(targetUri, Range.create(0, 0, 0, 0));
+        child.on('close', (code) => {
+            if (code === 0) {
+                resolve(stdout);
+            } else {
+                reject(new Error(`'z definition' exited with code ${code}: ${stderr}`));
             }
-            break;
-        }
-    }
+        });
 
-    return null;
+        child.on('error', (error) => {
+            reject(error);
+        });
+
+        // 通过 stdin 传递参数
+        child.stdin.write(body);
+        child.stdin.end();
+    });
 }
 
-// 查找变量和函数定义
-function findSymbolDefinition(document: TextDocument, position: any): Definition | null {
-    const text = document.getText();
-    const offset = document.offsetAt(position);
-    const lines = text.split('\n');
-
-    // 获取光标所在行
-    const line = lines[position.line];
-    if (!line) {
-        return null;
+// 文档格式化处理函数
+connection.onDocumentFormatting(async (params: DocumentFormattingParams): Promise<TextEdit[]> => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+        return [];
     }
 
-    // 简单提取光标处的单词
-    const wordRange = getWordRangeAtPosition(line, position.character);
-    if (!wordRange) {
-        return null;
-    }
+    try {
+        const text = document.getText();
+        const filePath = path.parse(document.uri.replace('file://', ''));
 
-    const word = line.substring(wordRange.start, wordRange.end);
-    if (!word) {
-        return null;
-    }
+        // 调用外部命令 `z formatting` 并通过 stdin 传递内容
+        const result = spawnSync('z', ['formatting', '-text'], {
+            input: text,
+            cwd: filePath.dir,
+            encoding: 'utf8',
+            timeout: 5000
+        });
 
-    // 在整个文档中查找变量或函数定义
-    for (let i = 0; i < lines.length; i++) {
-        const currentLine = lines[i];
-
-        // 匹配变量定义 var name = ...
-        const varMatch = currentLine.match(new RegExp(`var\\s+${word}\\s*=`));
-        if (varMatch) {
-            const startPos = { line: i, character: varMatch.index! };
-            const endPos = { line: i, character: varMatch.index! + varMatch[0].length };
-            return Location.create(document.uri, Range.create(startPos, endPos));
+        if (result.error) {
+            connection.console.error(`Z command not found: ${result.error.message}`);
+            return [];
         }
 
-        // 匹配函数定义 func name(...) 或 export func name(...)
-        const funcMatch = currentLine.match(new RegExp(`(export\\s+)?func\\s+${word}\\s*\\(`));
-        if (funcMatch) {
-            const startPos = { line: i, character: funcMatch.index! };
-            const endPos = { line: i, character: funcMatch.index! + funcMatch[0].length };
-            return Location.create(document.uri, Range.create(startPos, endPos));
+        if (result.status !== 0) {
+            const errorMsg = result.stderr || 'Unknown error';
+            connection.console.error(`'z formatting' failed with exit code ${result.status}: ${errorMsg}`);
+            return [];
         }
+
+        const formatted = result.stdout;
+
+        // 替换整个文档内容
+        const fullRange = Range.create(
+            Position.create(0, 0),
+            document.positionAt(text.length)
+        );
+
+        return [
+            TextEdit.replace(fullRange, formatted)
+        ];
+    } catch (error) {
+        connection.console.error(`Z Formatting error: ${error instanceof Error ? error.message : String(error)}`);
+        return [];
     }
-
-    return null;
-}
-
-// 获取光标处单词的范围
-function getWordRangeAtPosition(line: string, character: number): { start: number; end: number } | null {
-    const wordRegex = /[a-zA-Z_][a-zA-Z0-9_]*/g;
-    let match;
-
-    while ((match = wordRegex.exec(line)) !== null) {
-        const start = match.index;
-        const end = start + match[0].length;
-
-        if (character >= start && character <= end) {
-            return { start, end };
-        }
-    }
-
-    return null;
-}
+});
 
 // 监听文档变化
 documents.listen(connection);

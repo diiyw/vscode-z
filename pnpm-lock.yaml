@@ -17,6 +17,12 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.8.3
+      vscode-debugadapter:
+        specifier: ^1.51.0
+        version: 1.51.0
+      vscode-debugprotocol:
+        specifier: ^1.51.0
+        version: 1.51.0
       vscode-languageclient:
         specifier: ^9.0.1
         version: 9.0.1
@@ -45,6 +51,11 @@ packages:
     resolution: {integrity: sha512-lKwV/1brpG6mBUFHtb7NUmtABCb2WZZmm2wNiOA5hAb8VdCS4B3dtMWyvcoViccwAW/COERjXLt0zP1zXUN26g==}
     engines: {node: '>=10'}
 
+  mkdirp@1.0.4:
+    resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   semver@7.7.2:
     resolution: {integrity: sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==}
     engines: {node: '>=10'}
@@ -57,6 +68,14 @@ packages:
 
   undici-types@7.8.0:
     resolution: {integrity: sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw==}
+
+  vscode-debugadapter@1.51.0:
+    resolution: {integrity: sha512-mObaXD5/FH/z6aL2GDuyCLbnwLsYRCAJWgFid01vKW9Y5Si8OvINK+Tn+Yl/lRUbetjNuZW3j1euMEz6z8Yzqg==}
+    deprecated: This package has been renamed to @vscode/debugadapter, please update to the new name
+
+  vscode-debugprotocol@1.51.0:
+    resolution: {integrity: sha512-dzKWTMMyebIMPF1VYMuuQj7gGFq7guR8AFya0mKacu+ayptJfaRuM0mdHCqiOth4FnRP8mPhEroFPx6Ift8wHA==}
+    deprecated: This package has been renamed to @vscode/debugprotocol, please update to the new name
 
   vscode-jsonrpc@8.2.0:
     resolution: {integrity: sha512-C+r0eKJUIfiDIfwJhria30+TYWPtuHJXHtI7J0YlOmKAo7ogxP20T0zxB7HZQIFhIyvoBPwWskjxrvAtfjyZfA==}
@@ -97,11 +116,20 @@ snapshots:
     dependencies:
       brace-expansion: 2.0.2
 
+  mkdirp@1.0.4: {}
+
   semver@7.7.2: {}
 
   typescript@5.8.3: {}
 
   undici-types@7.8.0: {}
+
+  vscode-debugadapter@1.51.0:
+    dependencies:
+      mkdirp: 1.0.4
+      vscode-debugprotocol: 1.51.0
+
+  vscode-debugprotocol@1.51.0: {}
 
   vscode-jsonrpc@8.2.0: {}
 

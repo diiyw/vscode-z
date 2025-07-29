@@ -14,7 +14,8 @@
     },
     "categories": [
         "Programming Languages",
-        "Formatters"
+        "Formatters",
+        "Debuggers"
     ],
     "contributes": {
         "languages": [
@@ -42,12 +43,49 @@
                 "language": "z",
                 "path": "./snippets/z.code-snippets"
             }
+        ],
+        "breakpoints": [
+            {
+                "language": "z"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "z",
+                "label": "Z Debug",
+                "program": "./dist/debugAdapter.js",
+                "runtime": "node",
+                "configurationAttributes": {
+                    "launch": {
+                        "required": [
+                            "program"
+                        ],
+                        "properties": {
+                            "program": {
+                                "type": "string",
+                                "description": "Absolute path to the program.",
+                                "default": "${workspaceFolder}/${fileBasenameNoExtension}"
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "z",
+                        "request": "launch",
+                        "name": "Launch Z Program",
+                        "program": "${workspaceFolder}/${fileBasenameNoExtension}"
+                    }
+                ]
+            }
         ]
     },
     "devDependencies": {
         "@types/node": "^24.1.0",
         "@types/vscode": "^1.100.0",
         "typescript": "^5.0.0",
+        "vscode-debugadapter": "^1.51.0",
+        "vscode-debugprotocol": "^1.51.0",
         "vscode-languageclient": "^9.0.1",
         "vscode-languageserver": "^9.0.1",
         "vscode-languageserver-textdocument": "^1.0.12"
