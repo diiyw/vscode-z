@@ -57,7 +57,7 @@ map_to_array := func(m) {
     return arr
 }
 
-m_arr := map_to_array(m)
+m_arr :=map_to_array(m)
 fmt.println(m_arr, " (len: ", len(m_arr), ")")
 
 // tail-call optimization: faster and enables loop via recursion
@@ -84,7 +84,7 @@ if three := 3; three > 2 {  // optional init statement
     fmt.println("three > 2")
 } else if three == 2 {
     fmt.println("three = 2")
-} else {
+} else { 
     fmt.println("three < 2")
 }
 

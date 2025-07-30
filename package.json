@@ -10,7 +10,7 @@
     "icon": "logo.png",
     "version": "0.1.0",
     "engines": {
-        "vscode": "^1.100.0"
+        "vscode": "^1.99.0"
     },
     "categories": [
         "Programming Languages",
@@ -82,10 +82,8 @@
     },
     "devDependencies": {
         "@types/node": "^24.1.0",
-        "@types/vscode": "^1.100.0",
+        "@types/vscode": "^1.99.0",
         "typescript": "^5.0.0",
-        "vscode-debugadapter": "^1.51.0",
-        "vscode-debugprotocol": "^1.51.0",
         "vscode-languageclient": "^9.0.1",
         "vscode-languageserver": "^9.0.1",
         "vscode-languageserver-textdocument": "^1.0.12"
@@ -96,5 +94,10 @@
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./"
     },
-    "license": "MIT"
+    "license": "MIT",
+    "dependencies": {
+        "@vscode/debugadapter": "^1.68.0",
+        "@vscode/debugprotocol": "^1.68.0",
+        "vscode-uri": "^3.1.0"
+    }
 }

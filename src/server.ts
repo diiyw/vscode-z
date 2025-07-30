@@ -27,7 +27,8 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { spawn, spawnSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
-import { Uri, workspace } from "vscode";
+import { URI, Utils } from 'vscode-uri'
+import { workspace } from "vscode";
 
 // 创建连接并监听进程输入输出
 const connection = createConnection(ProposedFeatures.all);
@@ -333,25 +334,18 @@ connection.onDefinition(async (params) => {
             // 如果存在 import 字段，表示需要跳转到导入的模块
             if (result.import) {
                 // 获取当前工作目录
-                const currentDir = path.dirname(
-                    document.uri.replace("file://", "")
-                );
-
+                const currentDir = URI.file(document.uri);
                 // 构建目标文件路径
-                const targetFilePath = path
-                    .join(currentDir, `${result.import}`)
-                    .replace(/\\/g, "/");
+                const targetFilePath = Utils
+                    .joinPath(currentDir, `${result.import}`)
                 // 检查文件是否存在
                 connection.console.log(
-                    `z definition result: ${targetFilePath} ${fs.existsSync(
-                        targetFilePath
-                    )}`
+                    `z definition result: ${targetFilePath}`
                 );
-                const uri = Uri.file(targetFilePath);
-                if (await workspace.fs.stat(uri)) {
+                if (await workspace.fs.stat(targetFilePath)) {
                     // 创建跳转位置
                     const location: Location = {
-                        uri: uri.toString(),
+                        uri: targetFilePath.toString(),
                         range: Range.create(
                             Position.create(0, 0),
                             Position.create(0, 0)
