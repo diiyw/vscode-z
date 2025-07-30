@@ -455,8 +455,7 @@ connection.onDocumentFormatting(
             return [TextEdit.replace(fullRange, formatted)];
         } catch (error) {
             connection.console.error(
-                `Z Formatting error: ${
-                    error instanceof Error ? error.message : String(error)
+                `Z Formatting error: ${error instanceof Error ? error.message : String(error)
                 }`
             );
             return [];
