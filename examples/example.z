@@ -57,7 +57,7 @@ map_to_array := func(m) {
     return arr
 }
 
-m_arr :=map_to_array(m)
+m_arr := map_to_array(m)
 fmt.println(m_arr, " (len: ", len(m_arr), ")")
 
 // tail-call optimization: faster and enables loop via recursion

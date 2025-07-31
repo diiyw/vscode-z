@@ -33,19 +33,21 @@ export function activate(context: vscode.ExtensionContext) {
 
     // 创建并启动语言客户端
     client = new LanguageClient(
-        'zLanguageServer',
+        'ZLanguageServer',
         'Z Language Server',
         serverOptions,
         clientOptions
     );
 
-    // 启动客户端，这也将启动服务器
+    // 启动客户端（这不会阻塞后续代码的执行）
     client.start();
 
     // 注册调试适配器
     const debugAdapterPath = context.asAbsolutePath(path.join('dist', 'debugAdapter.js'));
     const debugProvider = new DebugAdapterDescriptorFactoryWithSocket(debugAdapterPath);
     context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('z', debugProvider));
+
+    vscode.window.showInformationMessage('Z Language Server is now active!');
 }
 
 export function deactivate(): Thenable<void> | undefined {

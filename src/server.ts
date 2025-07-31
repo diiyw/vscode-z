@@ -18,6 +18,7 @@ import {
     Range,
     DocumentFormattingParams,
     TextEdit,
+    LocationLink,
     Position,
 } from "vscode-languageserver/node";
 
@@ -28,7 +29,6 @@ import { spawn, spawnSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import { URI, Utils } from 'vscode-uri'
-import { workspace } from "vscode";
 
 // 创建连接并监听进程输入输出
 const connection = createConnection(ProposedFeatures.all);
@@ -334,24 +334,40 @@ connection.onDefinition(async (params) => {
             // 如果存在 import 字段，表示需要跳转到导入的模块
             if (result.import) {
                 // 获取当前工作目录
-                const currentDir = URI.file(document.uri);
+                const currentDir = URI.file(path.dirname(document.uri).replace('file://', ''));
                 // 构建目标文件路径
                 const targetFilePath = Utils
                     .joinPath(currentDir, `${result.import}`)
+                // 将 URI 转换为文件路径
+                const filePath = targetFilePath.toString().replace('file://', '');
                 // 检查文件是否存在
                 connection.console.log(
-                    `z definition result: ${targetFilePath}`
+                    `z definition result: ${targetFilePath} ${fs.existsSync(filePath)}`
                 );
-                if (await workspace.fs.stat(targetFilePath)) {
-                    // 创建跳转位置
-                    const location: Location = {
-                        uri: targetFilePath.toString(),
-                        range: Range.create(
-                            Position.create(0, 0),
-                            Position.create(0, 0)
-                        ),
-                    };
-                    return location;
+
+                // 使用 fs 模块检查文件是否存在
+                try {
+                    if (fs.existsSync(filePath)) {
+                        // 创建跳转位置
+                        const locationLink: LocationLink = {
+                            originSelectionRange: Range.create(
+                                Position.create(6, 16),
+                                Position.create(6, 19)
+                            ),
+                            targetUri: targetFilePath.toString(),
+                            targetRange: Range.create(
+                                Position.create(0, 0),
+                                Position.create(0, 0)
+                            ),
+                            targetSelectionRange: Range.create(
+                                Position.create(0, 0),
+                                Position.create(0, 0)
+                            )
+                        };
+                        return [locationLink];
+                    }
+                } catch (err) {
+                    connection.console.error(`Error checking file existence: ${err}`);
                 }
             }
 
