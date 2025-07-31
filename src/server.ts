@@ -28,7 +28,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { spawn, spawnSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
-import { URI, Utils } from 'vscode-uri'
+import { URI, Utils } from "vscode-uri";
 
 // 创建连接并监听进程输入输出
 const connection = createConnection(ProposedFeatures.all);
@@ -334,25 +334,23 @@ connection.onDefinition(async (params) => {
             // 如果存在 import 字段，表示需要跳转到导入的模块
             if (result.import) {
                 // 获取当前工作目录
-                const currentDir = URI.file(path.dirname(document.uri).replace('file://', ''));
+                const currentDir = Utils.dirname(URI.parse(document.uri));
                 // 构建目标文件路径
-                const targetFilePath = Utils
-                    .joinPath(currentDir, `${result.import}`)
-                // 将 URI 转换为文件路径
-                const filePath = targetFilePath.toString().replace('file://', '');
-                // 检查文件是否存在
-                connection.console.log(
-                    `z definition result: ${targetFilePath} ${fs.existsSync(filePath)}`
+                const targetFilePath = Utils.joinPath(
+                    currentDir,
+                    result.import.name
                 );
+                // 检查文件是否存在
+                connection.console.log(`z import: ${targetFilePath.fsPath} `);
 
                 // 使用 fs 模块检查文件是否存在
                 try {
-                    if (fs.existsSync(filePath)) {
+                    if (fs.existsSync(targetFilePath.fsPath)) {
                         // 创建跳转位置
                         const locationLink: LocationLink = {
                             originSelectionRange: Range.create(
-                                Position.create(6, 16),
-                                Position.create(6, 19)
+                                document.positionAt(result.import.start),
+                                document.positionAt(result.import.end)
                             ),
                             targetUri: targetFilePath.toString(),
                             targetRange: Range.create(
@@ -362,12 +360,14 @@ connection.onDefinition(async (params) => {
                             targetSelectionRange: Range.create(
                                 Position.create(0, 0),
                                 Position.create(0, 0)
-                            )
+                            ),
                         };
                         return [locationLink];
                     }
                 } catch (err) {
-                    connection.console.error(`Error checking file existence: ${err}`);
+                    connection.console.error(
+                        `Error checking file existence: ${err}`
+                    );
                 }
             }
 
@@ -465,7 +465,8 @@ connection.onDocumentFormatting(
             return [TextEdit.replace(fullRange, formatted)];
         } catch (error) {
             connection.console.error(
-                `Z Formatting error: ${error instanceof Error ? error.message : String(error)
+                `Z Formatting error: ${
+                    error instanceof Error ? error.message : String(error)
                 }`
             );
             return [];
