@@ -10,20 +10,13 @@ import {
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-    // 语言服务器配置
-    const serverModule = context.asAbsolutePath(path.join("dist", "server.js"));
+    // 语言服务器配置 - 使用外部可执行文件 zpls
+    const serverModule = "zpls";
 
-    // 语言服务器调试选项
-    const debugOptions = { execArgv: ["--nolazy", "--inspect=6009"] };
-
-    // 服务器配置
+    // 服务器配置 - 只使用 stdio 通信方式
     const serverOptions: ServerOptions = {
-        run: { module: serverModule, transport: TransportKind.ipc },
-        debug: {
-            module: serverModule,
-            transport: TransportKind.ipc,
-            options: debugOptions,
-        },
+        run: { command: serverModule, transport: TransportKind.stdio },
+        debug: { command: serverModule, transport: TransportKind.stdio },
     };
 
     // 客户端配置
