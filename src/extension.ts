@@ -1,22 +1,28 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import * as net from "net";
 import {
     LanguageClient,
     LanguageClientOptions,
-    ServerOptions,
-    TransportKind,
+    StreamInfo,
 } from "vscode-languageclient/node";
 
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-    // 语言服务器配置 - 使用外部可执行文件 zpls
-    const serverModule = "zpls";
+    // 服务器配置 - 使用 TCP 通信方式连接到外部LSP服务器
+    let connectionInfo = {
+        port: 60066,
+        host: "127.0.0.1"
+    };
 
-    // 服务器配置 - 只使用 stdio 通信方式
-    const serverOptions: ServerOptions = {
-        run: { command: serverModule, transport: TransportKind.stdio },
-        debug: { command: serverModule, transport: TransportKind.stdio },
+    const serverOptions = () => {
+        let socket = net.connect(connectionInfo);
+        let result: StreamInfo = {
+            writer: socket,
+            reader: socket
+        };
+        return Promise.resolve(result);
     };
 
     // 客户端配置
@@ -25,6 +31,10 @@ export function activate(context: vscode.ExtensionContext) {
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher("**/*.z"),
         },
+        // 添加自动重连功能
+        connectionOptions: {
+            maxRestartCount: 5,
+        }
     };
 
     // 创建并启动语言客户端
@@ -61,9 +71,8 @@ export function deactivate(): Thenable<void> | undefined {
 
 // Debug adapter descriptor factory
 class DebugAdapterDescriptorFactoryWithSocket
-    implements vscode.DebugAdapterDescriptorFactory
-{
-    constructor(private readonly adapterPath: string) {}
+    implements vscode.DebugAdapterDescriptorFactory {
+    constructor(private readonly adapterPath: string) { }
 
     createDebugAdapterDescriptor(
         _session: vscode.DebugSession
